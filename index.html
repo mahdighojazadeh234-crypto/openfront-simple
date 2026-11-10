@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>اوپن‌فرانت ساده</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: Tahoma, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      overflow: hidden;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    #lobby {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      gap: 12px;
+      overflow-y: auto;
+    }
+    h1 { font-size: 1.6rem; margin-bottom: 8px; color: #38bdf8; }
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    label { font-size: 0.85rem; color: #94a3b8; }
+    input, select {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 1rem;
+      width: 100%;
+    }
+    button {
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #0ea5e9;
+      color: white;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:active { background: #0284c7; }
+    button.secondary { background: #475569; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #game {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    #canvasWrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    #hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .hud-box {
+      background: rgba(15, 23, 42, 0.85);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      pointer-events: auto;
+    }
+    #bottomBar {
+      background: #1e293b;
+      padding: 8px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+      border-top: 1px solid #334155;
+    }
+    .build-btn {
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      background: #334155;
+      border-radius: 8px;
+      min-width: 70px;
+    }
+    .build-btn.active { background: #0ea5e9; }
+    .build-btn:disabled { opacity: 0.4; }
+    #playersList {
+      max-height: 120px;
+      overflow-y: auto;
+      font-size: 0.75rem;
+    }
+    .player-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+    .color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    #msg {
+      position: absolute;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 20;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #msg.show { opacity: 1; }
+    .ratio-control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+    }
+    input[type=range] { width: 80px; }
+  </style>
+</head>
+<body>
+  <div id="lobby">
+    <h1>اوپن‌فرانت ساده</h1>
+    <div class="card">
+      <label>نام شما</label>
+      <input id="playerName" placeholder="نام بازیکن" maxlength="16" value="بازیکن" />
+      
+      <label>نقشه</label>
+      <select id="mapSelect">
+        <option value="islands">جزایر (پیشنهادی)</option>
+        <option value="iran">ایران ساده</option>
+        <option value="world">جهان ساده</option>
+      </select>
+      
+      <label>تعداد ربات (۰ تا ۱۸)</label>
+      <input id="botCount" type="number" min="0" max="18" value="8" />
+      
+      <button id="btnCreate">ساخت اتاق جدید</button>
+    </div>
+    
+    <div class="card">
+      <label>کد اتاق</label>
+      <input id="roomCode" placeholder="مثلاً ABC123" maxlength="8" style="text-transform:uppercase" />
+      <button id="btnJoin" class="secondary">ورود به اتاق</button>
+    </div>
+    
+    <p style="font-size:0.75rem;color:#64748b;text-align:center;max-width:320px">
+      بعد از ساخت اتاق، کد را برای دوستانت بفرست. حداکثر ۱۰ نفر انسانی.
+    </p>
+  </div>
+
+  <div id="game">
+    <div id="canvasWrap">
+      <canvas id="gameCanvas"></canvas>
+      <div id="hud">
+        <div class="hud-box">
+          <div>طلا: <span id="gold">0</span></div>
+          <div>نیرو: <span id="myTroops">0</span></div>
+          <div>سرزمین: <span id="myTiles">0</span></div>
+        </div>
+        <div class="hud-box" id="playersList"></div>
+      </div>
+      <div id="msg"></div>
+    </div>
+    
+    <div id="bottomBar">
+      <button class="build-btn" id="btnCity" data-type="city">🏙 شهر<br><small>۵۰ طلا</small></button>
+      <button class="build-btn" id="btnFactory" data-type="factory">🏭 کارخانه<br><small>۸۰ طلا</small></button>
+      <div class="ratio-control">
+        <span>نسبت حمله</span>
+        <input type="range" id="attackRatio" min="10" max="100" value="50" />
+        <span id="ratioVal">۵۰٪</span>
+      </div>
+      <button class="build-btn secondary" id="btnCancelBuild" style="display:none">لغو ساخت</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
